@@ -18,7 +18,7 @@
       font-family:'Roboto',Arial,sans-serif;
     }
     body{margin:0;background:var(--bg);color:#202124;}
-    .container{max-width:900px;margin:30px auto;padding:20px;}
+    .container{max-width:900px;margin:10px auto;padding:20px;}
     .header{display:flex;gap:16px;align-items:center;margin-bottom:18px;}
     .logo{width:56px;height:56px;border-radius:12px;
           background:linear-gradient(135deg,var(--accent),#66a6ff);
@@ -106,7 +106,7 @@
 
       <label>背景色</label>
       <div class="flex-row">
-        <select style="margin-right: 8px;" v-model="bgColorSelect" :disabled="bgColor.trim() !== ''">
+        <select style="margin-right: 8px;" v-model="bgColorSelect">
           <option>白</option>
           <option>黒</option>
           <option>赤</option>
@@ -173,7 +173,7 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
   <script>
-    const { createApp } = Vue;
+    const { createApp, watch } = Vue;
 
     createApp({
       data() {
@@ -183,7 +183,7 @@
           font: "Roboto",
           background: "",
           backgroundSelect: "単色",
-          bgColor: "",
+          bgColor: "#ffffff",
           bgColorSelect: "白",
           style: "",
           styleSelect: "アイコン風",
@@ -192,7 +192,33 @@
           downloadUrl: "",
           pngUrl: "",
           loading: false,
-          error: null
+          error: null,
+          colorMap: {
+            "白": "#ffffff",
+            "黒": "#000000",
+            "赤": "#ff0000",
+            "青": "#0000ff",
+            "緑": "#008000",
+            "黄": "#ffff00",
+            "ピンク": "#ffc0cb",
+            "オレンジ": "#ffa500"
+          }
+        }
+      },
+      watch: {
+        bgColorSelect(newVal) {
+          if (this.colorMap[newVal]) {
+            this.bgColor = this.colorMap[newVal];
+          }
+        },
+        bgColor(newVal) {
+          // カラーパレット選択時は、近いプリセット名に同期（完全一致のみ）
+          const entry = Object.entries(this.colorMap).find(([k,v]) => v.toLowerCase() === newVal.toLowerCase());
+          if (entry) {
+            this.bgColorSelect = entry[0];
+          } else {
+            this.bgColorSelect = "カスタム";
+          }
         }
       },
       methods: {
@@ -209,7 +235,7 @@
 
           const bg = this.background.trim() ? this.background : this.backgroundSelect;
           const st = this.style.trim() ? this.style : this.styleSelect;
-          const color = this.bgColor.trim() ? this.bgColor : this.bgColorSelect;
+          const color = this.bgColor; // ここで必ずカラーコードを使用
           const font = this.font;
 
           if (!bg) {
@@ -222,7 +248,7 @@
             return;
           }
 
-          const prompt = `画像サイズ: ${this.size}。背景は${color}の色の${bg}。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。`;
+          const prompt = `画像サイズ: ${this.size}。背景は${color}の${bg}。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。`;
 
           this.loading = true;
           try {
