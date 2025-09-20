@@ -86,6 +86,22 @@
         <option>Comic Sans MS</option>
       </select>
 
+      <label>文字色</label>
+      <div class="flex-row">
+        <select style="margin-right: 8px;" v-model="textColorSelect">
+          <option>黒</option>
+          <option>白</option>
+          <option>赤</option>
+          <option>青</option>
+          <option>緑</option>
+          <option>黄</option>
+          <option>ピンク</option>
+          <option>オレンジ</option>
+        </select>
+        <input type="color" v-model="textColor" />
+        <div style="margin: 0 0 10px 5px;">{{ textColor }}</div>
+      </div>
+
       <label>背景スタイル</label>
       <div class="flex-row">
         <select v-model="backgroundSelect" :disabled="background.trim() !== ''">
@@ -173,7 +189,7 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
   <script>
-    const { createApp, watch } = Vue;
+    const { createApp } = Vue;
 
     createApp({
       data() {
@@ -181,6 +197,8 @@
           apiKey: "AIzaSyAwC_jwP6kv1N4KQ6oPblQKe7c5coEgVmE",
           kanji: "",
           font: "Roboto",
+          textColor: "#000000",
+          textColorSelect: "黒",
           background: "",
           backgroundSelect: "単色",
           bgColor: "#ffffff",
@@ -212,13 +230,17 @@
           }
         },
         bgColor(newVal) {
-          // カラーパレット選択時は、近いプリセット名に同期（完全一致のみ）
           const entry = Object.entries(this.colorMap).find(([k,v]) => v.toLowerCase() === newVal.toLowerCase());
-          if (entry) {
-            this.bgColorSelect = entry[0];
-          } else {
-            this.bgColorSelect = "カスタム";
+          this.bgColorSelect = entry ? entry[0] : "カスタム";
+        },
+        textColorSelect(newVal) {
+          if (this.colorMap[newVal]) {
+            this.textColor = this.colorMap[newVal];
           }
+        },
+        textColor(newVal) {
+          const entry = Object.entries(this.colorMap).find(([k,v]) => v.toLowerCase() === newVal.toLowerCase());
+          this.textColorSelect = entry ? entry[0] : "カスタム";
         }
       },
       methods: {
@@ -235,7 +257,8 @@
 
           const bg = this.background.trim() ? this.background : this.backgroundSelect;
           const st = this.style.trim() ? this.style : this.styleSelect;
-          const color = this.bgColor; // ここで必ずカラーコードを使用
+          const bgColor = this.bgColor;
+          const textColor = this.textColor;
           const font = this.font;
 
           if (!bg) {
@@ -248,7 +271,7 @@
             return;
           }
 
-          const prompt = `画像サイズ: ${this.size}。背景は${color}の${bg}。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。`;
+          const prompt = `画像サイズ: ${this.size}。背景は${bgColor}の${bg}。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。`;
 
           this.loading = true;
           try {
@@ -297,7 +320,6 @@
             const blob = new Blob([clean], { type: "image/svg+xml;charset=utf-8" });
             this.downloadUrl = URL.createObjectURL(blob);
 
-            // PNG用にSVGをCanvasに描画して変換
             const canvas = document.createElement("canvas");
             const [w, h] = this.size.split("x").map(Number);
             canvas.width = w;
