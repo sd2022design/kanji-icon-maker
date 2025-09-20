@@ -28,7 +28,7 @@
     .card{background:var(--card);border-radius:var(--radius);
           padding:18px;box-shadow:0 6px 24px rgba(60,64,67,0.08);}
     input, select, textarea{width:97%;padding:10px;border-radius:8px;
-             border:1px solid #e6eef9;font-size:14px;margin-bottom:10px;}
+             border:1px solid #c5cbd2;font-size:14px;margin-bottom:10px;}
     button.primary{background:var(--accent);color:white;border:none;
                    padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600;}
     .muted{color:var(--muted);font-size:13px;}
@@ -60,7 +60,7 @@
 
       <label>背景スタイル</label>
       <div class="flex-row">
-        <select v-model="backgroundSelect">
+        <select v-model="backgroundSelect" :disabled="background.trim() !== ''">
           <option value="">選択してください</option>
           <option>青いグラデーション</option>
           <option>赤い円形パターン</option>
@@ -73,7 +73,7 @@
 
       <label>画風</label>
       <div class="flex-row">
-        <select v-model="styleSelect">
+        <select v-model="styleSelect" :disabled="style.trim() !== ''">
           <option value="">選択してください</option>
           <option>水彩風</option>
           <option>和風</option>
@@ -150,7 +150,7 @@
             return;
           }
 
-          // 選択＋自由入力の優先度: 自由入力があればそちらを使用
+          // 自由入力があれば優先
           const bg = this.background.trim() ? this.background : this.backgroundSelect;
           const st = this.style.trim() ? this.style : this.styleSelect;
 
