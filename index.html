@@ -56,17 +56,20 @@
 
     <div class="card">
       <label>中心に配置する文字</label>
-      <input v-model="kanji" placeholder="例：田中">
+      <input style="margin-bottom: 20px;" v-model="kanji" placeholder="例：田中">
 
       <label>背景スタイル</label>
       <div class="flex-row">
         <select v-model="backgroundSelect" :disabled="background.trim() !== ''">
           <option value="">選択してください</option>
-          <option>青いグラデーション</option>
-          <option>赤い円形パターン</option>
-          <option>和風の水墨</option>
-          <option>淡いパステル</option>
+          <option>単色</option>
+          <option>グラデーション</option>
+          <option>ドット</option>
+          <option>パステル</option>
           <option>幾何学模様</option>
+          <option>森</option>
+          <option>宇宙</option>
+          <option>空</option>
         </select>
         <input v-model="background" placeholder="自由入力も可能">
       </div>
@@ -75,11 +78,15 @@
       <div class="flex-row">
         <select v-model="styleSelect" :disabled="style.trim() !== ''">
           <option value="">選択してください</option>
+          <option>アニメ風</option>
+          <option>リアル風</option>
+          <option>手描き風</option>
           <option>水彩風</option>
           <option>和風</option>
           <option>ミニマル</option>
           <option>油絵風</option>
           <option>浮世絵風</option>
+          <option>3Dスタイル</option>
         </select>
         <input v-model="style" placeholder="自由入力も可能">
       </div>
@@ -109,9 +116,12 @@
 
       <div class="svg-preview" v-html="svgCode"></div>
 
-      <div style="margin-top:10px;">
+      <div style="margin-top:10px; display:flex; gap:10px;">
         <a :href="downloadUrl" download="generated.svg">
           <button class="primary">SVG をダウンロード</button>
+        </a>
+        <a :href="pngUrl" download="generated.png">
+          <button class="primary">PNG をダウンロード</button>
         </a>
       </div>
     </div>
@@ -135,6 +145,7 @@
           size: "1024x1024",
           svgCode: "",
           downloadUrl: "",
+          pngUrl: "",
           loading: false,
           error: null
         }
@@ -144,13 +155,13 @@
           this.error = null;
           this.svgCode = "";
           this.downloadUrl = "";
+          this.pngUrl = "";
 
           if (!this.kanji || this.kanji.trim().length === 0) {
             this.error = "文字を入力してください。";
             return;
           }
 
-          // 自由入力があれば優先
           const bg = this.background.trim() ? this.background : this.backgroundSelect;
           const st = this.style.trim() ? this.style : this.styleSelect;
 
@@ -164,7 +175,7 @@
             return;
           }
 
-          const prompt = `画像サイズ: ${this.size}。背景は${bg}。画風は${st}。中央に大きく「${this.kanji}」という文字を配置してください。`;
+          const prompt = `画像サイズ: ${this.size}。背景は${bg}。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置してください。`;
 
           this.loading = true;
           try {
@@ -212,6 +223,29 @@
 
             const blob = new Blob([clean], { type: "image/svg+xml;charset=utf-8" });
             this.downloadUrl = URL.createObjectURL(blob);
+
+            // PNG用にSVGをCanvasに描画して変換
+            const canvas = document.createElement("canvas");
+            const [w, h] = this.size.split("x").map(Number);
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+
+            const img = new Image();
+            const svgBlob = new Blob([clean], { type: "image/svg+xml;charset=utf-8" });
+            const durl = URL.createObjectURL(svgBlob);
+
+            img.onload = () => {
+              ctx.clearRect(0, 0, w, h);
+              ctx.drawImage(img, 0, 0, w, h);
+              URL.revokeObjectURL(durl);
+              this.pngUrl = canvas.toDataURL("image/png");
+            };
+            img.onerror = (e) => {
+              console.error("PNG変換に失敗しました", e);
+            };
+            img.src = durl;
+
           } catch (err) {
             console.error(err);
             this.error = err.message || String(err);
