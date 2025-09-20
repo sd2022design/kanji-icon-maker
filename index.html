@@ -74,16 +74,18 @@
 
       <label>文字のフォント</label>
       <select v-model="font" style="margin-bottom:20px; width:100%;">
+        <!-- 日本語向けフォント -->
+        <option>Noto Sans JP</option>
+        <option>Noto Serif JP</option>
+        <option>Yu Gothic</option>
+        <option>Meiryo</option>
+        <option>Hiragino Kaku Gothic Pro</option>
+        <option>Kozuka Gothic Pro</option>
+        <option>Futura Std</option>
+        <!-- 英語向けフォント -->
         <option>Roboto</option>
         <option>Arial</option>
         <option>Times New Roman</option>
-        <option>Georgia</option>
-        <option>Verdana</option>
-        <option>Courier New</option>
-        <option>Tahoma</option>
-        <option>Trebuchet MS</option>
-        <option>Impact</option>
-        <option>Comic Sans MS</option>
       </select>
 
       <label>文字色</label>
@@ -153,7 +155,7 @@
       <select v-model="size" style="width: 100%;">
         <option>256x256</option>
         <option>512x512</option>
-        <option selected>1024x1024</option>
+        <option>1024x1024</option>
       </select>
 
       <div style="margin-top:8px;">
@@ -196,7 +198,7 @@
         return {
           apiKey: "AIzaSyAwC_jwP6kv1N4KQ6oPblQKe7c5coEgVmE",
           kanji: "",
-          font: "Roboto",
+          font: "Noto Sans JP",
           textColor: "#000000",
           textColorSelect: "黒",
           background: "",
@@ -205,7 +207,7 @@
           bgColorSelect: "白",
           style: "",
           styleSelect: "アイコン風",
-          size: "1024x1024",
+          size: "256x256",
           svgCode: "",
           downloadUrl: "",
           pngUrl: "",
