@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gemini SVG Generator (Demo)</title>
+  <title>Kanji Icon Maker</title>
 
   <!-- Google風フォント -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -27,15 +27,17 @@
     h1{margin:0;font-size:20px;}
     .card{background:var(--card);border-radius:var(--radius);
           padding:18px;box-shadow:0 6px 24px rgba(60,64,67,0.08);}
-    textarea{width:97%;min-height:90px;padding:12px;border-radius:8px;
-             border:1px solid #e6eef9;font-size:14px;resize:vertical;}
+    input, select, textarea{width:97%;padding:10px;border-radius:8px;
+             border:1px solid #e6eef9;font-size:14px;margin-bottom:10px;}
     button.primary{background:var(--accent);color:white;border:none;
                    padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600;}
     .muted{color:var(--muted);font-size:13px;}
     pre{background:#f0f3f7;padding:10px;border-radius:8px;
-        overflow-x:auto;max-height:300px;}
-    .svg-preview{border:1px solid #ddd;border-radius:8px;
-                 background:#fff;padding:10px;margin-top:10px;}
+        overflow-x:auto;max-height:300px;display: none;}
+    .svg-preview{border:1px solid #ddd;border-radius:8px;background:#fff;padding:10px;
+        margin-top:10px;text-align:center;overflow:auto;
+    }
+    .svg-preview svg{max-width:100%;height:auto;width:auto;display:block;margin:auto;}
     .error{color:#c62828;font-weight:600;}
   </style>
 </head>
@@ -45,13 +47,28 @@
       <div class="logo"><b style="font-size: 19px;border-bottom: solid 2px #87CEFA;line-height: 1em;">Icon</b><b>Maker</b></div>
       <div>
         <h1>KANJI Icon Maker</h1>
-        <div class="muted">プロンプトから自由にアイコンを生成できます</div>
+        <div class="muted">文字・背景・画風・サイズなどを指定してSNSで使えるアイコンを生成</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="muted">プロンプト（例：青い円と赤い四角形を描いて）</div>
-      <textarea v-model="prompt"></textarea>
+      <!-- <div class="muted">画像設定</div> -->
+
+      <label>中心に配置する文字</label>
+      <input v-model="kanji" placeholder="例：田中">
+
+      <label>背景スタイル</label>
+      <input v-model="background" placeholder="例：青いグラデーション">
+
+      <label>画風</label>
+      <input v-model="style" placeholder="例：水彩風、和風、ミニマル">
+
+      <label>画像サイズ</label>
+      <select v-model="size">
+        <option>256x256</option>
+        <option>512x512</option>
+        <option>1024x1024</option>
+      </select>
 
       <div style="margin-top:8px;">
         <button class="primary" @click="generate" :disabled="loading">
@@ -66,7 +83,7 @@
     <div style="height:20px"></div>
 
     <div class="card" v-if="svgCode">
-      <div class="muted">生成されたSVGコード</div>
+      <div class="muted">生成された画像</div>
       <pre>{{ svgCode }}</pre>
 
       <div class="svg-preview" v-html="svgCode"></div>
@@ -89,7 +106,10 @@
       data() {
         return {
           apiKey: "AIzaSyAwC_jwP6kv1N4KQ6oPblQKe7c5coEgVmE",
-          prompt: "青い円と赤い四角形を描いて",
+          kanji: "",
+          background: "",
+          style: "",
+          size: "1024x1024",
           svgCode: "",
           downloadUrl: "",
           loading: false,
@@ -101,18 +121,23 @@
           this.error = null;
           this.svgCode = "";
           this.downloadUrl = "";
-          if (!this.apiKey) {
-            this.error = "APIキーを設定してください。";
+
+          if (!this.kanji || this.kanji.trim().length === 0) {
+            this.error = "文字を入力してください。";
             return;
           }
-          if (!this.prompt || this.prompt.trim().length < 2) {
-            this.error = "有効なプロンプトを入力してください。";
+          if (!this.background || this.background.trim().length === 0) {
+            this.error = "背景スタイルを入力してください。";
             return;
           }
 
+          // プロンプトを構築
+          const prompt = `画像サイズ: ${this.size}。背景は${this.background}。画風は${this.style}。中央に大きく「${this.kanji}」という文字を配置してください。`;
+
           this.loading = true;
           try {
-            const modelName = "gemini-1.5-flash-latest";
+            const modelName = "gemini-2.5-flash-lite";
+            // const modelName = "gemini-2.5-flash-image-preview"; //←画像生成もできる？
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
             const body = {
@@ -121,7 +146,7 @@
                   role: "user",
                   parts: [
                     {
-                      text: `次のリクエストに応じたSVGコードを生成してください。SVGタグを含む完全なコードのみを返してください。説明文や前置きは不要です。\n\nリクエスト: ${this.prompt}`
+                      text: `次のリクエストに応じたSVGコードを生成してください。SVGタグを含む完全なコードのみを返してください。説明文や前置きは不要です。\n\nリクエスト: ${prompt}`
                     }
                   ]
                 }
@@ -146,7 +171,6 @@
             const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
             if (!text) throw new Error("SVGコードを取得できませんでした。");
 
-            // 最初の <svg ...> から最後の </svg> を抽出
             const match = text.match(/<svg[\s\S]*<\/svg>/i);
             if (!match) {
               throw new Error("レスポンスから <svg> タグを見つけられませんでした。");
@@ -155,7 +179,6 @@
             const clean = match[0].trim();
             this.svgCode = clean;
 
-            // Blobにしてダウンロードリンクを作成
             const blob = new Blob([clean], { type: "image/svg+xml;charset=utf-8" });
             this.downloadUrl = URL.createObjectURL(blob);
           } catch (err) {
