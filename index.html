@@ -138,7 +138,7 @@
         <div style="margin: 0 0 10px 5px;">{{ bgColor }}</div>
       </div>
 
-      <label>画風</label>
+      <!-- <label>画風</label>
       <div class="flex-row">
         <select v-model="styleSelect" :disabled="style.trim() !== ''">
           <option>アイコン風</option>
@@ -149,7 +149,7 @@
           <option>3D風</option>
         </select>
         <input v-model="style" placeholder="自由入力も可能">
-      </div>
+      </div> -->
 
       <label>画像サイズ</label>
       <select v-model="size" style="width: 100%;">
@@ -273,6 +273,7 @@
             return;
           }
 
+          // const prompt = `画像サイズ: ${this.size}。背景は${bgColor}の色の${bg}で埋める。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。`;
           const prompt = `画像サイズ: ${this.size}。背景は${bgColor}の色の${bg}で埋める。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。`;
 
           this.loading = true;
