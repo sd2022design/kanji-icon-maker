@@ -101,7 +101,7 @@
           <option>オレンジ</option>
         </select>
         <input type="color" v-model="textColor" />
-        <div style="margin: 0 0 10px 5px;">{{ textColor }}</div>
+        <div style="margin: 0 0 0 5px;">{{ textColor }}</div>
       </div>
 
       <label>背景スタイル</label>
@@ -135,7 +135,7 @@
           <option>オレンジ</option>
         </select>
         <input type="color" v-model="bgColor" />
-        <div style="margin: 0 0 10px 5px;">{{ bgColor }}</div>
+        <div style="margin: 0 0 0 5px;">{{ bgColor }}</div>
       </div>
 
       <!-- <label>画風</label>
@@ -273,8 +273,8 @@
             return;
           }
 
-          // const prompt = `画像サイズ: ${this.size}。背景は${bgColor}の色の${bg}で埋める。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。`;
-          const prompt = `画像サイズ: ${this.size}。背景は${bgColor}の色の${bg}で埋める。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。`;
+          const prompt = `・画像のサイズ：${this.size}。\n・画像のメイン：画像の中心に「${this.kanji}」という文字をなるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。文字は最前面に表示する。\n・画像の背景：背景は「${bg}」を表現する。背景は${bgColor}の色を主に使用する。`;
+          // const prompt = `画像サイズ: ${this.size}。背景は${bgColor}の色の${bg}で埋める。画風は${st}。「${this.kanji}」という文字を中心になるべく大きく配置する。文字のフォントは${font}。文字の色は${textColor}。`;
 
           this.loading = true;
           try {
@@ -287,7 +287,7 @@
                   role: "user",
                   parts: [
                     {
-                      text: `次のリクエストに応じたSVGコードを生成してください。SVGタグを含む完全なコードのみを返してください。説明文や前置きは不要です。\n\nリクエスト: ${prompt}`
+                      text: `次のリクエストに応じたSVGコードを生成してください。コードは背景が単色の時を除き、50行以上生成すること。動きをつけるコードはNGです。SVGタグを含む完全なコードのみを返してください。説明文や前置きは不要です。\n\nリクエスト\n${prompt}`
                     }
                   ]
                 }
