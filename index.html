@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gemini SVG Generator (Demo)</title>
+
+  <!-- Google風フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f6f9fc;
+      --card:#ffffff;
+      --accent:#1a73e8;
+      --muted:#5f6b76;
+      --radius:12px;
+      font-family:'Roboto',Arial,sans-serif;
+    }
+    body{margin:0;background:var(--bg);color:#202124;}
+    .container{max-width:900px;margin:30px auto;padding:20px;}
+    .header{display:flex;gap:16px;align-items:center;margin-bottom:18px;}
+    .logo{width:56px;height:56px;border-radius:12px;
+          background:linear-gradient(135deg,var(--accent),#66a6ff);
+          display:flex;flex-direction: column;align-items:center;justify-content:center;
+          color:white;font-weight:800;font-size:12px;}
+    h1{margin:0;font-size:20px;}
+    .card{background:var(--card);border-radius:var(--radius);
+          padding:18px;box-shadow:0 6px 24px rgba(60,64,67,0.08);}
+    textarea{width:97%;min-height:90px;padding:12px;border-radius:8px;
+             border:1px solid #e6eef9;font-size:14px;resize:vertical;}
+    button.primary{background:var(--accent);color:white;border:none;
+                   padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600;}
+    .muted{color:var(--muted);font-size:13px;}
+    pre{background:#f0f3f7;padding:10px;border-radius:8px;
+        overflow-x:auto;max-height:300px;}
+    .svg-preview{border:1px solid #ddd;border-radius:8px;
+                 background:#fff;padding:10px;margin-top:10px;}
+    .error{color:#c62828;font-weight:600;}
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <div class="header">
+      <div class="logo"><b style="font-size: 19px;border-bottom: solid 2px #87CEFA;line-height: 1em;">Icon</b><b>Maker</b></div>
+      <div>
+        <h1>KANJI Icon Maker</h1>
+        <div class="muted">プロンプトから自由にアイコンを生成できます</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted">プロンプト（例：青い円と赤い四角形を描いて）</div>
+      <textarea v-model="prompt"></textarea>
+
+      <div style="margin-top:8px;">
+        <button class="primary" @click="generate" :disabled="loading">
+          <span v-if="!loading">生成</span>
+          <span v-else>生成中…</span>
+        </button>
+      </div>
+
+      <div v-if="error" style="margin-top:8px" class="error">{{ error }}</div>
+    </div>
+
+    <div style="height:20px"></div>
+
+    <div class="card" v-if="svgCode">
+      <div class="muted">生成されたSVGコード</div>
+      <pre>{{ svgCode }}</pre>
+
+      <div class="svg-preview" v-html="svgCode"></div>
+
+      <div style="margin-top:10px;">
+        <a :href="downloadUrl" download="generated.svg">
+          <button class="primary">SVG をダウンロード</button>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          apiKey: "AIzaSyAwC_jwP6kv1N4KQ6oPblQKe7c5coEgVmE",
+          prompt: "青い円と赤い四角形を描いて",
+          svgCode: "",
+          downloadUrl: "",
+          loading: false,
+          error: null
+        }
+      },
+      methods: {
+        async generate() {
+          this.error = null;
+          this.svgCode = "";
+          this.downloadUrl = "";
+          if (!this.apiKey) {
+            this.error = "APIキーを設定してください。";
+            return;
+          }
+          if (!this.prompt || this.prompt.trim().length < 2) {
+            this.error = "有効なプロンプトを入力してください。";
+            return;
+          }
+
+          this.loading = true;
+          try {
+            const modelName = "gemini-1.5-flash-latest";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+
+            const body = {
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    {
+                      text: `次のリクエストに応じたSVGコードを生成してください。SVGタグを含む完全なコードのみを返してください。説明文や前置きは不要です。\n\nリクエスト: ${this.prompt}`
+                    }
+                  ]
+                }
+              ]
+            };
+
+            const resp = await fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": this.apiKey
+              },
+              body: JSON.stringify(body)
+            });
+
+            if (!resp.ok) {
+              const txt = await resp.text();
+              throw new Error(`APIエラー: ${resp.status} ${resp.statusText}\n${txt}`);
+            }
+
+            const data = await resp.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (!text) throw new Error("SVGコードを取得できませんでした。");
+
+            // 最初の <svg ...> から最後の </svg> を抽出
+            const match = text.match(/<svg[\s\S]*<\/svg>/i);
+            if (!match) {
+              throw new Error("レスポンスから <svg> タグを見つけられませんでした。");
+            }
+
+            const clean = match[0].trim();
+            this.svgCode = clean;
+
+            // Blobにしてダウンロードリンクを作成
+            const blob = new Blob([clean], { type: "image/svg+xml;charset=utf-8" });
+            this.downloadUrl = URL.createObjectURL(blob);
+          } catch (err) {
+            console.error(err);
+            this.error = err.message || String(err);
+          } finally {
+            this.loading = false;
+          }
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>
