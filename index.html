@@ -39,6 +39,9 @@
     }
     .svg-preview svg{max-width:100%;height:auto;width:auto;display:block;margin:auto;}
     .error{color:#c62828;font-weight:600;}
+    .flex-row{display:flex;gap:5px;align-items:center;margin-bottom:10px;}
+    .flex-row select{width:50%;}
+    .flex-row input{width:47%;}
   </style>
 </head>
 <body>
@@ -52,19 +55,37 @@
     </div>
 
     <div class="card">
-      <!-- <div class="muted">画像設定</div> -->
-
       <label>中心に配置する文字</label>
       <input v-model="kanji" placeholder="例：田中">
 
       <label>背景スタイル</label>
-      <input v-model="background" placeholder="例：青いグラデーション">
+      <div class="flex-row">
+        <select v-model="backgroundSelect">
+          <option value="">選択してください</option>
+          <option>青いグラデーション</option>
+          <option>赤い円形パターン</option>
+          <option>和風の水墨</option>
+          <option>淡いパステル</option>
+          <option>幾何学模様</option>
+        </select>
+        <input v-model="background" placeholder="自由入力も可能">
+      </div>
 
       <label>画風</label>
-      <input v-model="style" placeholder="例：水彩風、和風、ミニマル">
+      <div class="flex-row">
+        <select v-model="styleSelect">
+          <option value="">選択してください</option>
+          <option>水彩風</option>
+          <option>和風</option>
+          <option>ミニマル</option>
+          <option>油絵風</option>
+          <option>浮世絵風</option>
+        </select>
+        <input v-model="style" placeholder="自由入力も可能">
+      </div>
 
       <label>画像サイズ</label>
-      <select v-model="size">
+      <select v-model="size" style="width: 100%;">
         <option>256x256</option>
         <option>512x512</option>
         <option>1024x1024</option>
@@ -108,7 +129,9 @@
           apiKey: "AIzaSyAwC_jwP6kv1N4KQ6oPblQKe7c5coEgVmE",
           kanji: "",
           background: "",
+          backgroundSelect: "",
           style: "",
+          styleSelect: "",
           size: "1024x1024",
           svgCode: "",
           downloadUrl: "",
@@ -126,18 +149,26 @@
             this.error = "文字を入力してください。";
             return;
           }
-          if (!this.background || this.background.trim().length === 0) {
-            this.error = "背景スタイルを入力してください。";
+
+          // 選択＋自由入力の優先度: 自由入力があればそちらを使用
+          const bg = this.background.trim() ? this.background : this.backgroundSelect;
+          const st = this.style.trim() ? this.style : this.styleSelect;
+
+          if (!bg) {
+            this.error = "背景スタイルを入力または選択してください。";
             return;
           }
 
-          // プロンプトを構築
-          const prompt = `画像サイズ: ${this.size}。背景は${this.background}。画風は${this.style}。中央に大きく「${this.kanji}」という文字を配置してください。`;
+          if (!st) {
+            this.error = "画風を入力または選択してください。";
+            return;
+          }
+
+          const prompt = `画像サイズ: ${this.size}。背景は${bg}。画風は${st}。中央に大きく「${this.kanji}」という文字を配置してください。`;
 
           this.loading = true;
           try {
             const modelName = "gemini-2.5-flash-lite";
-            // const modelName = "gemini-2.5-flash-image-preview"; //←画像生成もできる？
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
             const body = {
